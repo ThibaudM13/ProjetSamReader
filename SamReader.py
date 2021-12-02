@@ -41,43 +41,50 @@ import os, sys, re
 ## 1/ Check,
 import os, sys
 def testFile(fichier_entree) :
+    
     file_is_correct=True
-    if os.path.exists(fichier_entree):
-        if os.path.isfile(fichier_entree):
-            if os.stat(fichier_entree).st_size != 0:
-                fichier = open(fichier_entree, "r")
-                cpt=0
-                for line in fichier:
-        
-                    if not line.startswith("@"):
-                        cpt+=1
-                        col_line=line.split('\t')
-                        if len(col_line)>=11 :## Test du nbe de colonnes
-                            if (int(col_line[1])>(2^12-1) or int(col_line[1])<0): ## Test du Flag
-                                if re.match(r"\*|([0-9]+[MIDNSHPX=])+",col_line[5]):## Test du CIGAR
-                                    pass
+    if (((fichier_entree.split('.'))[-1])=="sam"):
+        if os.path.exists(fichier_entree):
+            if os.path.isfile(fichier_entree):
+                if os.stat(fichier_entree).st_size != 0:
+                    fichier = open(fichier_entree, "r")
+                    cpt=0
+                    for line in fichier:
+                        
+                        if not line.startswith("@"):
+                            cpt+=1
+                            col_line=line.split('\t')
+                            
+                            ## Test du nbe de colonnes
+                            if len(col_line)>=11 :
+                                if (int(col_line[1])>(2^12-1) or int(col_line[1])<0): ## Test du Flag
+                                    if re.match(r"\*|([0-9]+[MIDNSHPX=])+",col_line[5]):## Test du CIGAR
+                                        pass
+                                    else:
+                                        print("ERROR_FILE: The CIGAR value: "+col_line[5]+", is not valid.")
+                                        file_is_correct=False
+                                        break
                                 else:
-                                    print("ERROR_FILE: The CIGAR value: "+col_line[5]+", is not valid.")
+                                    print("ERROR_FILE: The FLAG value, is out of the expected values [0,4095]")
                                     file_is_correct=False
                                     break
-                            else:
-                                print("ERROR_FILE: The FLAG value, is out of the expected values [0,4095]")
+                            else :
+                                print("ERROR_FILE: The number of columns is under the minimum required for a SAM file.")
                                 file_is_correct=False
                                 break
-                        else :
-                            print("ERROR_FILE: The number of columns is under the minimum required for a SAM file.")
-                            file_is_correct=False
-                            break
-                        if (cpt>100):
-                            break
+                            if (cpt>100):
+                                break
+                else:
+                    print('ERROR_FILE: '+fichier_entree+' is empty')
+                    file_is_correct=False
             else:
-                print('ERROR_FILE: '+fichier_entree+' is empty')
+                print('ERROR_USER: Please insert a file')
                 file_is_correct=False
         else:
-            print('ERROR_USER: Please insert a file')
+            print('ERROR_PATH: Entry does not exists')
             file_is_correct=False
     else:
-        print('ERROR_PATH: Entry does not exists')
+        print('ERROR_USER: extension different from SAM, please try again with a SAM file.')            
         file_is_correct=False
     if file_is_correct:
         print("Entry file is a correct SAM")
@@ -380,12 +387,13 @@ def main(argv):
         elif ( sys.argv[i] == "-h" ) or ( sys.argv[i] == "--help" ) or ( len(sys.argv) == 1 ):
             help()
 
-    dico_file_sam=store_sam(dico_files["file_in"])
+    testFile(dico_files["file_in"])
+    #dico_file_sam=store_sam(dico_files["file_in"])
     #unmapped(dico_file_sam)
     #partiallyMapped(dico_file_sam)
     #testFile(dico_files["file_in"])
     #checkUtf8((dico_files["file_in"])
-    Mapped_Unmapped(dico_file_sam)
+    #Mapped_Unmapped(dico_file_sam)
     
 ############### LAUNCH THE SCRIPT ###############
 
