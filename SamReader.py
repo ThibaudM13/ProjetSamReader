@@ -202,7 +202,7 @@ def Mapped_Unmapped(dico_sam):
     with open ("read_mapped_mate_unmapped.fasta", "a+") as read_mapped_mate_unmapped_fasta, open("summary_read_mapped_mate_unmapped.txt", "w") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico) # We compute the same
-            if ((flag[-4] =='1' and flag[-3] =='0') or(flag[-4]=='0' and flag[-3]=='1')) :
+            if ((flag[-4] =='1' and flag[-3] =='0')or(flag[-4]=='0' and flag[-3]=='1')):
                 for line in dico_sam[key_dico]:
                     col_line=line.split('\t')
                     cigar=col_line[2]
@@ -233,17 +233,17 @@ def flag_mate(flag):
         flag_mate_bin[-3]='1'
         flag_mate_bin[-4]='0'
  
-    if flag_bin[-5]=='1': # Modify the sense
+    if flag_bin[-5]=='1' and flag_bin[-6]=='0': # Modify the sense
         flag_mate_bin[-5]='0'
         flag_mate_bin[-6]='1'
-    else:
-        flag_mate_bin[-5]='1'
+    elif flag_bin[-6]=='1' and flag_bin[-5]=='0':
+        flag_mate_bin[-5]='1' 
         flag_mate_bin[-6]='0'
 
-    if flag_mate_bin[-7]=='1': # Modify the first/secon in pair
+    if flag_bin[-7]=='1' and flag_bin[-8]=='0': # Modify the first/secon in pair
         flag_mate_bin[-7]='0'
         flag_mate_bin[-8]='1'
-    else:
+    elif flag_bin[-8]=='1' and flag_bin[-7]=='0':
         flag_mate_bin[-7]='1'
         flag_mate_bin[-8]='0'
         
