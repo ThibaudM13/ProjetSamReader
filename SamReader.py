@@ -161,9 +161,10 @@ def unmapped(dico_sam):
             if int(flag[-3]) == 1: # Check if the condition 3 is True: 'Read unmapped'
                 unmapped_count += len(dico_sam[key_dico])      # add the number of element in the list for the corresponding Flag (= line number with this flag)
                 for line in dico_sam[key_dico]:                # Parse the lines having the corresponding flag
-                    unmapped_fasta.write(str(line+"\n"))            # Write the line into a file called 'only_unmapped.fasta'
+                    col_line=line.split('\t')
+                    unmapped_fasta.write(f">{col_line[0]} function:unmapped\n{col_line[3]}\n")           # Write the line into a file called 'only_unmapped.fasta'
 
-        summary_file.write("Total unmapped reads: " + str(unmapped_count) + "\n") # Write the total number of unmapped reads into a file called 'summary_unmapped.txt'
+        summary_file.write(f"Total unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file called 'summary_unmapped.txt'
         return unmapped_count
 
     
@@ -180,18 +181,18 @@ def partiallyMapped(dico_sam):
     
     partially_mapped_count = 0
 
-    with open ("only_partially_mapped.fasta", "a+") as partially_mapped_fasta, open("summary_partially_mapped.txt", "w") as summary_file:
+    with open ("partially_mapped.fasta", "a+") as partially_mapped_fasta, open("summary_partially_mapped.txt", "w") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico) # We compute the same
             for line in dico_sam[key_dico]:
                 col_line=line.split('\t')
-                cigar_list_dico=col_line[2]
+                cigar=col_line[2]
                 if int(flag[-2]) == 1: 
-                    if cigar_list_dico != "100M":
+                    if not re.match(r"\*|([0-9]+[M=])+",cigar):
                         partially_mapped_count += 1
-                        partially_mapped_fasta.write(str(line+"\n"))
+                        partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
-        summary_file.write("Total partially mapped reads: " + str(partially_mapped_count) + "\n") 
+        summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
         return partially_mapped_count
 
     
@@ -213,11 +214,11 @@ def Mapped_Unmapped(dico_sam):
                             cigar_mate=col_line_mate[2]
                             if (col_line_mate[0]==name_read):                                       # Check: if same name as mate
                                 read_mapped_mate_unmapped_count += 1
-                                read_mapped_mate_unmapped_fasta.write(str(line+"\n"))               # Write the couple of reads in the file
-                                read_mapped_mate_unmapped_fasta.write(str(line_mate+"\n"))
+                                read_mapped_mate_unmapped_fasta.write(f">{name_read} function:Mapped_Unmapped read\n{col_line[3]}\n")               # Write the couple of reads in the file
+                                read_mapped_mate_unmapped_fasta.write(f">{name_read} function:Mapped_Unmapped mate\n{col_line_mate[3]}\n")
                                 break
 
-        summary_file.write("Total pair of reads where a read is mapped and his mate is unmapped: " + str(read_mapped_mate_unmapped_count) + "\n") 
+        summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count}\n") 
         return read_mapped_mate_unmapped_count
 
 #### Fonction that return the mate flag ####
@@ -280,13 +281,13 @@ def one_partially_mapped(dico_sam):
 
                             if ((col_line_mate[0]==name_read) & (bool(re.match(r"\*|([0-9]+[M=])+",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
                                 pair_one_partially_mapped_count += 1                                                
-                                one_partially_mapped_fasta.write(str(line+"\n"))                                    # Write the couple of reads in the file
-                                one_partially_mapped_fasta.write(str(line_mate+"\n"))
+                                one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file
+                                one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped mate mapped\n{col_line_mate[3]}\n")
                                 break
                         
                         
 
-        summary_file.write("Total pair of reads with one partially mapped and one mapped correctly: " + str(pair_one_partially_mapped_count)+ "\n") 
+        summary_file.write(f"Total pair of reads with one partially mapped and one mapped correctly: {pair_one_partially_mapped_count}\n") 
         return pair_one_partially_mapped_count
 
     
@@ -319,6 +320,7 @@ def readCigar(cigar):
             n += 1
     return dico
 
+
 ### Analyse the CIGAR = regular expression that summarise each read alignment ###
 def percentMutation(dico):
         
@@ -334,6 +336,8 @@ def percentMutation(dico):
         else :
             res += ("0.00" + ";")
     return res
+
+
 
 def globalPercentCigar():
     """
@@ -401,14 +405,14 @@ def main(argv):
         elif ( sys.argv[i] == "-h" ) or ( sys.argv[i] == "--help" ) or ( len(sys.argv) == 1 ):
             help()
 
-    #testFile(dico_files["file_in"])
+    testFile(dico_files["file_in"])
     dico_file_sam=store_sam(dico_files["file_in"])
     #unmapped(dico_file_sam)
-    #partiallyMapped(dico_file_sam)
-    #testFile(dico_files["file_in"])
-    #checkUtf8((dico_files["file_in"])
-    Mapped_Unmapped(dico_file_sam)
-    #one_partially_mapped(dico_file_sam)
+    partiallyMapped(dico_file_sam)
+    #Mapped_Unmapped(dico_file_sam)
+    one_partially_mapped(dico_file_sam)
+    
+    
 ############### LAUNCH THE SCRIPT ###############
 
 if __name__ == "__main__":
