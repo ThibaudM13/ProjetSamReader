@@ -219,6 +219,13 @@ def flag_mate(flag):
     flag_bin=flagBinary(flag)
     flag_mate_bin=flag_bin
     flag_mate=0
+    if flag_bin[-3]=='1': # Modify the sense
+        flag_mate_bin[-3]='0'
+        flag_mate_bin[-4]='1'
+    elif flag_bin[-4]=='1':
+        flag_mate_bin[-3]='1'
+        flag_mate_bin[-4]='0'
+ 
     if flag_bin[-5]=='1': # Modify the sense
         flag_mate_bin[-5]='0'
         flag_mate_bin[-6]='1'
