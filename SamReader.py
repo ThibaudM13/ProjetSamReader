@@ -202,13 +202,20 @@ def Mapped_Unmapped(dico_sam):
     with open ("read_mapped_mate_unmapped.fasta", "a+") as read_mapped_mate_unmapped_fasta, open("summary_read_mapped_mate_unmapped.txt", "w") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico) # We compute the same
-            for line in dico_sam[key_dico]:
-                col_line=line.split('\t')
-                cigar_list_dico=col_line[2]
-                if int(flag[-4]) ==1:
-                    if re.match(r"\*|([0-9]+[M=])+",cigar_list_dico) :
-                        read_mapped_mate_unmapped_count += 1
-                        read_mapped_mate_unmapped_fasta.write(str(line+"\n"))
+            if ((flag[-4] =='1' and flag[-3] =='0') or(flag[-4]=='0' and flag[-3]=='1')) :
+                for line in dico_sam[key_dico]:
+                    col_line=line.split('\t')
+                    cigar=col_line[2]
+                    if re.match(r"\*|([0-9]+[M=])+",cigar) :
+                        name_read=col_line[0]
+                        for line_mate in dico_sam[str(flag_mate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
+                            col_line_mate=line_mate.split('\t')
+                            cigar_mate=col_line_mate[2]
+                            if (col_line_mate[0]==name_read):                                       # Check: if same name as mate
+                                read_mapped_mate_unmapped_count += 1
+                                read_mapped_mate_unmapped_fasta.write(str(line+"\n"))               # Write the couple of reads in the file
+                                read_mapped_mate_unmapped_fasta.write(str(line_mate+"\n"))
+                                break
 
         summary_file.write("Total pair of reads where a read is mapped and his mate is unmapped: " + str(read_mapped_mate_unmapped_count) + "\n") 
         return read_mapped_mate_unmapped_count
@@ -219,10 +226,10 @@ def flag_mate(flag):
     flag_bin=flagBinary(flag)
     flag_mate_bin=flag_bin
     flag_mate=0
-    if flag_bin[-3]=='1': # Modify the sense
+    if flag_bin[-3]=='1' and flag_bin[-4]=='0':
         flag_mate_bin[-3]='0'
         flag_mate_bin[-4]='1'
-    elif flag_bin[-4]=='1':
+    elif flag_bin[-4]=='1'and flag_bin[-3]=='0':
         flag_mate_bin[-3]='1'
         flag_mate_bin[-4]='0'
  
@@ -394,14 +401,14 @@ def main(argv):
         elif ( sys.argv[i] == "-h" ) or ( sys.argv[i] == "--help" ) or ( len(sys.argv) == 1 ):
             help()
 
-    testFile(dico_files["file_in"])
-    #dico_file_sam=store_sam(dico_files["file_in"])
+    #testFile(dico_files["file_in"])
+    dico_file_sam=store_sam(dico_files["file_in"])
     #unmapped(dico_file_sam)
     #partiallyMapped(dico_file_sam)
     #testFile(dico_files["file_in"])
     #checkUtf8((dico_files["file_in"])
-    #Mapped_Unmapped(dico_file_sam)
-    
+    Mapped_Unmapped(dico_file_sam)
+    #one_partially_mapped(dico_file_sam)
 ############### LAUNCH THE SCRIPT ###############
 
 if __name__ == "__main__":
