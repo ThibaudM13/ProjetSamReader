@@ -4,7 +4,7 @@
 
 #__authors__ = ("Thibaud MARIN", "Kélian PEREZ")
 #__contact__ = ("thibaud.marin@etu.umontpellier.fr","kelian.perez@etu.umontpellier.fr")
-#__version__ = "1.0"
+#__version__ = "1.2"
 #__date__ = "12/14/2021"
 #__licence__ ="This program is free software: you can redistribute it and/or modify
         #it under the terms of the GNU General Public License as published by
@@ -40,28 +40,32 @@ import os, sys, re
 
 ## 1/ Check,
 import os, sys
-def testFile(fichier_entree) :
-    
+def testFile(given_file) :
     file_is_correct=True
-    if (((fichier_entree.split('.'))[-1])=="sam"):
-        if os.path.exists(fichier_entree):
-            if os.path.isfile(fichier_entree):
-                if os.stat(fichier_entree).st_size != 0:
-                    fichier = open(fichier_entree, "r")
+    nb_header_lines=0
+    
+    ## Tests on given file
+    
+    if os.path.exists(given_file):
+        if os.path.isfile(given_file):
+            if os.stat(given_file).st_size != 0:
+                if (((given_file.split('.'))[-1])=="sam"):
+                    fichier = open(given_file, "r")
                     cpt=0
                     for line in fichier:
-                        
-                        if not line.startswith("@"):
+                        if line.startswith("@"): ## count the header lines
+                            nb_header_lines+=1
+                        else:
                             cpt+=1
                             col_line=line.split('\t')
                             
                             ## Test du nbe de colonnes
                             if len(col_line)>=11 :
-                                if (int(col_line[1])>(2^12-1) or int(col_line[1])<0): ## Test du Flag
-                                    if re.match(r"\*|([0-9]+[MIDNSHPX=])+",col_line[5]):## Test du CIGAR
+                                if (int(col_line[1])>(2^12-1) or int(col_line[1])<0): ## Flag test
+                                    if re.match(r"\*|([0-9]+[MIDNSHPX=])+",col_line[5]):## CIGAR test
                                         pass
                                     else:
-                                        print("ERROR_FILE: The CIGAR value: "+col_line[5]+", is not valid.")
+                                        print(f"ERROR_FILE: The CIGAR value: {col_line[5]}, is not valid.")
                                         file_is_correct=False
                                         break
                                 else:
@@ -72,23 +76,31 @@ def testFile(fichier_entree) :
                                 print("ERROR_FILE: The number of columns is under the minimum required for a SAM file.")
                                 file_is_correct=False
                                 break
-                            if (cpt>100):
+                            if (cpt>=max(10*nb_header_lines,100)): # Check the format and the values of each field AND if the file is not corrupted
                                 break
                 else:
-                    print('ERROR_FILE: '+fichier_entree+' is empty')
+                    print("ERROR_USER: extension different from '.sam', please try again with a SAM file.")            
                     file_is_correct=False
             else:
-                print('ERROR_USER: Please insert a file')
+                print(f"ERROR_FILE: {given_file} is empty")
                 file_is_correct=False
         else:
-            print('ERROR_PATH: Entry does not exists')
+            print('ERROR_USER: Please insert a file')
             file_is_correct=False
     else:
-        print('ERROR_USER: extension different from SAM, please try again with a SAM file.')            
+        print('ERROR_PATH: Entry does not exists')
         file_is_correct=False
-    if file_is_correct:
-        print("Entry file is a correct SAM")
+        
 
+
+    ## Bilan
+    
+    if ((cpt==100 or cpt==10*nb_header_lines) and file_is_correct):
+        return True
+    else:
+        return False
+
+        
 ## 2/ Read, 
 
 
@@ -151,10 +163,10 @@ def flagBinary(flag) :
 
 
 #### Analyze the unmapped reads (not paired) ####
-def unmapped(dico_sam):
+def unmapped(dico_sam, file_out):
     
     unmapped_count = 0
-    with open ("only_unmapped.fasta", "a+") as unmapped_fasta, open("summary_unmapped.txt", "w") as summary_file:
+    with open ("only_unmapped.fasta", "a+") as unmapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam: # Parse the keys of the dictionnary, in our case all the possible Flag
             flag = flagBinary(key_dico) # Transform the flag into binary
 
@@ -164,7 +176,7 @@ def unmapped(dico_sam):
                     col_line=line.split('\t')
                     unmapped_fasta.write(f">{col_line[0]} function:unmapped\n{col_line[3]}\n")           # Write the line into a file called 'only_unmapped.fasta'
 
-        summary_file.write(f"Total unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file called 'summary_unmapped.txt'
+        summary_file.write(f"\nTotal unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file summary.
         return unmapped_count
 
     
@@ -177,32 +189,34 @@ def unmapped(dico_sam):
 
     
 #### Analyze the partially mapped reads ####
-def partiallyMapped(dico_sam):
+def partiallyMapped(dico_sam, file_out):
     
     partially_mapped_count = 0
 
-    with open ("partially_mapped.fasta", "a+") as partially_mapped_fasta, open("summary_partially_mapped.txt", "w") as summary_file:
+    with open ("partially_mapped.fasta", "a+") as partially_mapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
-            flag = flagBinary(key_dico) # We compute the same
+            flag = flagBinary(key_dico)
             for line in dico_sam[key_dico]:
                 col_line=line.split('\t')
                 cigar=col_line[2]
-                if int(flag[-2]) == 1: 
-                    if not re.match(r"\*|([0-9]+[M=])+",cigar):
-                        partially_mapped_count += 1
-                        partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
+                if re.match(r".*\d[SH].*",cigar): # Selection of all reads partially mapped (Cigar different of only M)
+                    partially_mapped_count += 1
+                    partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
         summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
         return partially_mapped_count
 
+
+
+
     
 #### Analyze pair of reads where read is mapped and mate unmapped #### -> check du FLAG pour mate unmapped et CIGAR = 100M
-def Mapped_Unmapped(dico_sam):
+def Mapped_Unmapped(dico_sam, file_out):
     read_mapped_mate_unmapped_count = 0
 
-    with open ("read_mapped_mate_unmapped.fasta", "a+") as read_mapped_mate_unmapped_fasta, open("summary_read_mapped_mate_unmapped.txt", "w") as summary_file:
+    with open ("read_mapped_mate_unmapped.fasta", "a+") as read_mapped_mate_unmapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
-            flag = flagBinary(key_dico) # We compute the same
+            flag = flagBinary(key_dico)
             if ((flag[-4] =='1' and flag[-3] =='0')or(flag[-4]=='0' and flag[-3]=='1')):
                 for line in dico_sam[key_dico]:
                     col_line=line.split('\t')
@@ -214,8 +228,8 @@ def Mapped_Unmapped(dico_sam):
                             cigar_mate=col_line_mate[2]
                             if (col_line_mate[0]==name_read):                                       # Check: if same name as mate
                                 read_mapped_mate_unmapped_count += 1
-                                read_mapped_mate_unmapped_fasta.write(f">{name_read} function:Mapped_Unmapped read\n{col_line[3]}\n")               # Write the couple of reads in the file
-                                read_mapped_mate_unmapped_fasta.write(f">{name_read} function:Mapped_Unmapped mate\n{col_line_mate[3]}\n")
+                                read_mapped_mate_unmapped_fasta.write(f">{col_line[0]} function:Mapped_Unmapped read\n{col_line[3]}\n")               # Write the couple of reads in the file
+                                read_mapped_mate_unmapped_fasta.write(f">{col_line_mate[0]} function:Mapped_Unmapped mate\n{col_line_mate[3]}\n")
                                 break
 
         summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count}\n") 
@@ -227,7 +241,7 @@ def flag_mate(flag):
     flag_bin=flagBinary(flag)
     flag_mate_bin=flag_bin
     flag_mate=0
-    if flag_bin[-3]=='1' and flag_bin[-4]=='0':
+    if flag_bin[-3]=='1' and flag_bin[-4]=='0': # Modify the read/ mate unmapped
         flag_mate_bin[-3]='0'
         flag_mate_bin[-4]='1'
     elif flag_bin[-4]=='1'and flag_bin[-3]=='0':
@@ -241,7 +255,7 @@ def flag_mate(flag):
         flag_mate_bin[-5]='1' 
         flag_mate_bin[-6]='0'
 
-    if flag_bin[-7]=='1' and flag_bin[-8]=='0': # Modify the first/secon in pair
+    if flag_bin[-7]=='1' and flag_bin[-8]=='0': # Modify the first/second in pair
         flag_mate_bin[-7]='0'
         flag_mate_bin[-8]='1'
     elif flag_bin[-8]=='1' and flag_bin[-7]=='0':
@@ -260,10 +274,10 @@ def flag_mate(flag):
 
 #### Analyze the reads where one is mapped and the mate is partially mapped (Using Flag and CIGAR)####
 
-def one_partially_mapped(dico_sam):
+def one_partially_mapped(dico_sam,file_out):
     pair_one_partially_mapped_count = 0
     
-    with open ("one_partially_mapped.fasta", "a+") as one_partially_mapped_fasta, open("summary_one_partially_mapped.txt", "w") as summary_file:
+    with open ("one_partially_mapped.fasta", "a+") as one_partially_mapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico) # We compute the same
             if flag[-2]=='1':                                   # Check if the 2nd element in the FLAG is 1 (paired in proper pair)
@@ -279,7 +293,7 @@ def one_partially_mapped(dico_sam):
                             cigar_mate=col_line_mate[2]
 
 
-                            if ((col_line_mate[0]==name_read) & (bool(re.match(r"\*|([0-9]+[M=])+",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
+                            if ((col_line_mate[0]==name_read) & (bool(re.match(r".*\dM.*",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
                                 pair_one_partially_mapped_count += 1                                                
                                 one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file
                                 one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped mate mapped\n{col_line_mate[3]}\n")
@@ -375,8 +389,16 @@ def globalPercentCigar():
  
 #### Summarise the results ####
 
-#def Summary(fileName):
-    
+def Summary(dico_sam, fileSummaryName):
+    with open(fileSummaryName,"a+") as f:
+        f.write(f"\t\t\t\t## GLOBAL SUMMARY OF YOUR SAM FILE ##\n"+
+                "# Number of reads with characteristics:\n")
+        
+    unmapped(dico_sam, fileSummaryName)
+    Mapped_Unmapped(dico_sam, fileSummaryName)
+        
+    partiallyMapped(dico_sam,fileSummaryName)
+    one_partially_mapped(dico_sam,fileSummaryName)
    
 #### Help function ####
 
@@ -390,13 +412,12 @@ def help():
 #### Main function ####
 
 def main(argv):
-    #fichier_entree=sys.argv[1]
-    #testFile(fichier_entree)
     dico_files={
         "file_in":"file_in",
-        "file_out":"./file_out.txt",
+        "file_out":"./file_out_summary.txt",
     }
-    
+
+    ## Arguments gestion
     for i in range(0,len(sys.argv),1):
         if ( sys.argv[i] == "-i" ) or ( sys.argv[i] == "--input" ):
             dico_files["file_in"]=sys.argv[i+1]
@@ -404,13 +425,15 @@ def main(argv):
             dico_files["file_out"]=sys.argv[i+1]
         elif ( sys.argv[i] == "-h" ) or ( sys.argv[i] == "--help" ) or ( len(sys.argv) == 1 ):
             help()
+            exit()
 
-    testFile(dico_files["file_in"])
-    dico_file_sam=store_sam(dico_files["file_in"])
-    #unmapped(dico_file_sam)
-    partiallyMapped(dico_file_sam)
-    #Mapped_Unmapped(dico_file_sam)
-    one_partially_mapped(dico_file_sam)
+
+    ## Launch the script Summary, with all fonctions if the ffile is correct
+    if testFile(dico_files["file_in"]):
+        print("Entry file is a correct SAM")
+        dico_sam=store_sam(dico_files["file_in"])
+        Summary(dico_sam,dico_files["file_out"])
+        
     
     
 ############### LAUNCH THE SCRIPT ###############
