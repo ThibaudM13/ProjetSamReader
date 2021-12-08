@@ -41,6 +41,8 @@ import os, sys, re
 ## 1/ Check,
 import os, sys
 def testFile(given_file) :
+    print("Testing file: ",end='')
+
     file_is_correct=True
     nb_header_lines=0
     
@@ -94,7 +96,7 @@ def testFile(given_file) :
 
 
     ## Bilan
-    
+    print("done.")
     if ((cpt==100 or cpt==10*nb_header_lines) and file_is_correct):
         return True
     else:
@@ -108,6 +110,7 @@ def testFile(given_file) :
 ## 3/ Store,
 
 def store_sam(file_input):
+    print("Storing file into dictionnary: ",end='')
     ## Create a dictionnary with FLAG as keys and a list of important informations for each line (Name(col_line[0]), FLAG(col_line[1]), CIGAR(col_line[5]), sequence(col_line[9]))
     dico_sam={}
     
@@ -122,6 +125,7 @@ def store_sam(file_input):
                     dico_sam[flag].append(major_element_line) ## Attention, il faut choisir les element à écrire dans la liste du dico !!
                 else:
                     dico_sam[flag]=[major_element_line]
+    print("done.")
     return dico_sam
 
 ## 4/ Analyse 
@@ -164,7 +168,7 @@ def flagBinary(flag) :
 
 #### Analyze the unmapped reads (not paired) ####
 def unmapped(dico_sam, file_out):
-    
+    print("Function unmapped: ",end='')
     unmapped_count = 0
     with open ("only_unmapped.fasta", "w") as unmapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam: # Parse the keys of the dictionnary, in our case all the possible Flag
@@ -177,6 +181,7 @@ def unmapped(dico_sam, file_out):
                     unmapped_fasta.write(f">{col_line[0]} function:unmapped\n{col_line[3]}\n")           # Write the line into a file called 'only_unmapped.fasta'
 
         summary_file.write(f"\nTotal unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file summary.
+        print("done.")
         return unmapped_count
 
     
@@ -190,7 +195,7 @@ def unmapped(dico_sam, file_out):
     
 #### Analyze the partially mapped reads ####
 def partiallyMapped(dico_sam, file_out):
-    
+    print("Function partiallyMapped: ",end='')
     partially_mapped_count = 0
 
     with open ("partially_mapped.fasta", "w") as partially_mapped_fasta, open(file_out, "a+") as summary_file:
@@ -204,6 +209,7 @@ def partiallyMapped(dico_sam, file_out):
                     partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
         summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
+        print("done.")
         return partially_mapped_count
 
 
@@ -212,6 +218,7 @@ def partiallyMapped(dico_sam, file_out):
     
 #### Analyze pair of reads where read is mapped and mate unmapped #### -> check du FLAG pour mate unmapped et CIGAR = 100M
 def Mapped_Unmapped(dico_sam, file_out):
+    print("Function Mapped_Unmapped: ",end='')
     read_mapped_mate_unmapped_count = 0
 
     with open ("read_mapped_mate_unmapped.fasta", "w") as read_mapped_mate_unmapped_fasta, open(file_out, "a+") as summary_file:
@@ -233,6 +240,7 @@ def Mapped_Unmapped(dico_sam, file_out):
                                 break
 
         summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count}\n") 
+        print("done.")
         return read_mapped_mate_unmapped_count
     
    
@@ -276,6 +284,7 @@ def flag_mate(flag):
 #### Analyze the reads where one is mapped and the mate is partially mapped (Using Flag and CIGAR)####
 
 def one_partially_mapped(dico_sam,file_out):
+    print("Function one_partially_mapped: ",end='')
     pair_one_partially_mapped_count = 0
     
     with open ("one_partially_mapped.fasta", "w") as one_partially_mapped_fasta, open(file_out, "a+") as summary_file:
@@ -285,24 +294,22 @@ def one_partially_mapped(dico_sam,file_out):
                 for line in dico_sam[key_dico]:                 # Parse the lines with the corresponding flag
                     col_line=line.split('\t')                      
                     cigar=col_line[2]                           # CIGAR is stocked into the variable cigar
-                    if not re.fullmatch(r".*\d[SH].*",cigar): # Check if the read is partially mapped
-                        name_read=col_line[0]
-                        
-                       
+                    if re.fullmatch(r".*\d[SH].*",cigar): # Check if the read is partially mapped
+                    
                         for line_mate in dico_sam[str(flag_mate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
                             col_line_mate=line_mate.split('\t')
                             cigar_mate=col_line_mate[2]
-
-
-                            if ((col_line_mate[0]==name_read) & (bool(re.fullmatch(r"\d*[M]",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
+                            
+                            if ((col_line_mate[0]==col_line[0]) & (bool(re.fullmatch(r"\d*[M]",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
                                 pair_one_partially_mapped_count += 1                                                
-                                one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file
-                                one_partially_mapped_fasta.write(f">{name_read} function:one_partially_mapped mate mapped\n{col_line_mate[3]}\n")
+                                one_partially_mapped_fasta.write(f">{col_line[0]} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file
+                                one_partially_mapped_fasta.write(f">{col_line_mate[0]} function:one_partially_mapped mate mapped\n{col_line_mate[3]}\n")
                                 break
                         
                         
 
         summary_file.write(f"Total pair of reads with one partially mapped and one mapped correctly: {pair_one_partially_mapped_count}\n") 
+        print("done.")
         return pair_one_partially_mapped_count
 
     
@@ -310,7 +317,7 @@ def one_partially_mapped(dico_sam,file_out):
     
 ### Analyse the CIGAR = regular expression that summarise each read alignment ###
 def readCigar(cigar): 
-   
+    
     ext = re.findall('\w',cigar) # split cigar 
     key=[] 
     value=[]    
@@ -338,7 +345,8 @@ def readCigar(cigar):
 
 ### Analyse the CIGAR = regular expression that summarise each read alignment ###
 def percentMutation(dico):
-        
+       
+    
     totalValue = 0 # Total number of mutations
     for v in dico :
         totalValue += dico[v]
@@ -354,29 +362,41 @@ def percentMutation(dico):
 
 
 
-def globalPercentCigar():
+def globalPercentCigar(dico_sam,file_out):
+    """
+        Preparation of the outpuTable_cigar.txt file.
+    """
+    print("Function globalPercentCigar (preparation): ",end='')
+    with open ("outpuTable_cigar.txt", "w") as outputTable:
+        for flag in dico_sam:
+            for line in dico_sam[flag]:
+                col_line=line.split('\t')
+                outputTable.write(f"{percentMutation(readCigar(col_line[2]))}\n")
+
+
+    print("done.")
     """
       Global representation of cigar distribution.
     """
-    
-    with open ("outpuTable_cigar.txt","r") as outpuTable, open("Final_Cigar_table.txt", "w") as FinalCigar:
+    print("Function globalPercentCigar (analyse and writing): ",end='')
+    with open ("outpuTable_cigar.txt","r") as outpuTable, open(file_out, "a+") as FinalCigar:
         nbReads, M, I, D, S, H, N, P, X, Egal = [0 for n in range(10)]
 
         for line in outpuTable :
             mutValues = line.split(";")
-            nbReads += 2
-            M += float(mutValues[2])+float(mutValues[12])
-            I += float(mutValues[3])+float(mutValues[13])
-            D += float(mutValues[4])+float(mutValues[14])
-            S += float(mutValues[5])+float(mutValues[15])
-            H += float(mutValues[6])+float(mutValues[16])
-            N += float(mutValues[7])+float(mutValues[17])
-            P += float(mutValues[8])+float(mutValues[18])
-            X += float(mutValues[9])+float(mutValues[19])
-            Egal += float(mutValues[10])+float(mutValues[20])
+            nbReads += 1
+            M += float(mutValues[0])
+            I += float(mutValues[1])
+            D += float(mutValues[2])
+            S += float(mutValues[3])
+            H += float(mutValues[4])
+            N += float(mutValues[5])
+            P += float(mutValues[6])
+            X += float(mutValues[7])
+            Egal += float(mutValues[8])
 
-        FinalCigar.write("Global cigar mutation observed :"+"\n"
-                        +"Alignlent Match : "+str(round(M/nbReads,2))+"\n"
+        FinalCigar.write("\n\n\n\tGlobal cigar mutation observed :"+"\n\n"
+                        +"Alignelement Match : "+str(round(M/nbReads,2))+"\n"
                         +"Insertion : "+str(round(I/nbReads,2))+"\n"
                         +"Deletion : "+str(round(D/nbReads,2))+"\n"
                         +"Skipped region : "+str(round(S/nbReads,2))+"\n"
@@ -385,6 +405,8 @@ def globalPercentCigar():
                         +"Padding : "+str(round(P/nbReads,2))+"\n"
                         +"Sequence Match : "+str(round(Egal/nbReads,2))+"\n"
                         +"Sequence Mismatch : "+str(round(X/nbReads,2))+"\n")
+    print("done.")
+
 
 
  
@@ -392,14 +414,16 @@ def globalPercentCigar():
 
 def Summary(dico_sam, fileSummaryName):
     with open(fileSummaryName,"w") as f:
-        f.write(f"\t\t\t\t## GLOBAL SUMMARY OF YOUR SAM FILE ##\n"+
-                "# Number of reads with characteristics:\n")
+        f.write(f"\t\t\t\t   GLOBAL SUMMARY OF YOUR SAM FILE \n"+
+                "\tNumber of reads with characteristics:\n")
         
     unmapped(dico_sam, fileSummaryName)
     Mapped_Unmapped(dico_sam, fileSummaryName)
         
     partiallyMapped(dico_sam,fileSummaryName)
     one_partially_mapped(dico_sam,fileSummaryName)
+    
+    globalPercentCigar(dico_sam,fileSummaryName)
    
 #### Help function ####
 
