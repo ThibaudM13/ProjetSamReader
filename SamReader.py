@@ -48,10 +48,10 @@ def testFile(given_file) :
     
     ## Tests on given file
     
-    if os.path.exists(given_file):
-        if os.path.isfile(given_file):
-            if os.stat(given_file).st_size != 0:
-                if (((given_file.split('.'))[-1])=="sam"):
+    if os.path.exists(given_file): # check if input exists
+        if os.path.isfile(given_file): # check if input is a file
+            if os.stat(given_file).st_size != 0: # check if file is not empty
+                if (((given_file.split('.'))[-1])=="sam"): # check if it's name_file.sam
                     fichier = open(given_file, "r")
                     cpt=0
                     for line in fichier:
@@ -61,9 +61,9 @@ def testFile(given_file) :
                             cpt+=1
                             col_line=line.split('\t')
                             
-                            ## Test du nbe de colonnes
-                            if len(col_line)>=11 :
-                                if (int(col_line[1])>(2^12-1) or int(col_line[1])<0): ## Flag test
+                        
+                            if len(col_line)>=11 : # check if total number of colums is 11 or more
+                                if (int(col_line[1])<(2^16-1) or int(col_line[1])>0): ## Flag test
                                     if re.match(r"\*|([0-9]+[MIDNSHPX=])+",col_line[5]):## CIGAR test
                                         pass
                                     else:
@@ -210,16 +210,15 @@ def mappedUnmapped(dico_sam, file_out):
 
     with open ("read_mapped_mate_unmapped.fasta", "w") as read_mapped_mate_unmapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
-            flag = flagBinary(key_dico)
-            if (flag[-4] =='1' and flag[-3] =='0'):
-                for line in dico_sam[key_dico]:
-                    col_line=line.split('\t')
-                    cigar=col_line[2]
-                    if re.fullmatch(r"\d*[M]",cigar):
-                        name_read=col_line[0]
+            flag = flagBinary(key_dico)                                        # convert flag in binary
+            if (flag[-4] =='1' and flag[-3] =='0'):                            # check if 3rd element = 0 (mate is not unmapped) and 4th element of FLAG = 1 (mate unmapped)
+                for line in dico_sam[key_dico]:                                # Parse lines with the 'right' falg                              
+                    col_line=line.split('\t')                              
+                    cigar=col_line[2]                                          # variable cigar hosts the CIGAR
+                    if re.fullmatch(r"\d*[M]",cigar):                          # check if CIGAR is xxxM with xxx the total length of the read in bp
+                        name_read=col_line[0]                                  # variable name_read hosts the name of the read
                         for line_mate in dico_sam[str(flagMate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
-                            col_line_mate=line_mate.split('\t')
-                            cigar_mate=col_line_mate[2]
+                            col_line_mate=line_mate.split('\t')                                   
                             if (col_line_mate[0]==name_read):                                       # Check: if same name as mate
                                 read_mapped_mate_unmapped_count += 1
                                 read_mapped_mate_unmapped_fasta.write(f">{col_line[0]} function:Mapped_Unmapped read\n{col_line[3]}\n")               # Write the couple of reads in the file
