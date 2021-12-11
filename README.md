@@ -1,10 +1,3 @@
----
-title: README
-
-output:
-  html_document: default
-  pdf_document: default
----
 <div id="top"></div>
 
 <!--
