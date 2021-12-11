@@ -78,7 +78,7 @@ def testFile(given_file) :
                                 print("ERROR_FILE: The number of columns is under the minimum required for a SAM file.")
                                 file_is_correct=False
                                 break
-                            if (cpt=100): # Check the format and the values of each field 
+                            if (cpt==100): # Check the format and the values of each field 
                                 break
                 else:
                     print("ERROR_USER: extension different from '.sam', please try again with a SAM file.")            
@@ -189,12 +189,13 @@ def partiallyMapped(dico_sam, file_out):
     with open ("partially_mapped.fasta", "w") as partially_mapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico)
-            for line in dico_sam[key_dico]:
-                col_line=line.split('\t')
-                cigar=col_line[2]
-                if re.fullmatch(r".*\d[SH].*",cigar): # Selection of all reads partially mapped (Cigar different of only M)
-                    partially_mapped_count += 1
-                    partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
+            if (flag[-3]=='0'):
+                for line in dico_sam[key_dico]:
+                    col_line=line.split('\t')
+                    cigar=col_line[2]
+                    if re.fullmatch(r".*\d[SH].*",cigar): # Selection of all reads partially mapped (Cigar different of only M)
+                        partially_mapped_count += 1
+                        partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
         summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
     print("done.")
@@ -443,7 +444,7 @@ def main(argv):
     for i in range(0,len(sys.argv),1):
         liste_arg=["-i","--input","-o","--output","-h","--help"]
         
-        if ( sys.argv[i] in liste_arg[0:2:1] ):
+        if ( sys.argv[i] in liste_arg[0:2] ):
         
             # Check if a file name/path is given after the option -i|--input and different from an option
             if i+1<len(sys.argv) and sys.argv[i+1] not in liste_arg:
@@ -452,7 +453,7 @@ def main(argv):
                 print("Please insert a file name/path after the -i|--input option")
                 exit()
         
-        elif ( sys.argv[i] in liste_arg[2::1][:2:1] ):
+        elif ( sys.argv[i] in liste_arg[2:4] ):
         
             # Check if a file name or path is given after the option -o|--output and different from an option
             if i+1<len(sys.argv) and sys.argv[i+1] not in liste_arg :
@@ -461,7 +462,7 @@ def main(argv):
                 print("Please insert a file name/path after the -o|--output option")
                 exit()
         
-        elif ( sys.argv[i] in liste_arg[4:2:1][:2:1] ) or ( len(sys.argv) == 1 ):
+        elif ( sys.argv[i] in liste_arg[4:6] ) or ( len(sys.argv) == 1 ):
             help()
             exit()
         
