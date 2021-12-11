@@ -389,9 +389,9 @@ def globalPercentCigar(dico_sam,file_out):
                         +"Alignement Match : "+str(round(M/nbReads,2))+"\n"
                         +"Insertion : "+str(round(I/nbReads,2))+"\n"
                         +"Deletion : "+str(round(D/nbReads,2))+"\n"
-                        +"Skipped region : "+str(round(S/nbReads,2))+"\n"
-                        +"Soft Clipping : "+str(round(H/nbReads,2))+"\n"
-                        +"Hard Clipping : "+str(round(N/nbReads,2))+"\n"
+                        +"Soft Clipping : "+str(round(S/nbReads,2))+"\n"
+                        +"Hard Clipping : "+str(round(H/nbReads,2))+"\n"
+                        +"Skipped Region : "+str(round(N/nbReads,2))+"\n"
                         +"Padding : "+str(round(P/nbReads,2))+"\n"
                         +"Sequence Match : "+str(round(Egal/nbReads,2))+"\n"
                         +"Sequence Mismatch : "+str(round(X/nbReads,2))+"\n")
