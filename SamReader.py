@@ -78,7 +78,7 @@ def testFile(given_file) :
                                 print("ERROR_FILE: The number of columns is under the minimum required for a SAM file.")
                                 file_is_correct=False
                                 break
-                            if (cpt>=max(10*nb_header_lines,100)): # Check the format and the values of each field AND if the file is not corrupted
+                            if (cpt=100): # Check the format and the values of each field 
                                 break
                 else:
                     print("ERROR_USER: extension different from '.sam', please try again with a SAM file.")            
@@ -97,7 +97,7 @@ def testFile(given_file) :
 
     ## Bilan
     print("done.")
-    if ((cpt==100 or cpt==10*nb_header_lines) and file_is_correct):
+    if ((cpt==100) and file_is_correct):
         return True
     else:
         return False
@@ -109,7 +109,7 @@ def testFile(given_file) :
 
 ## 3/ Store,
 
-def store_sam(file_input):
+def storeSam(file_input):
     print("Storing file into dictionnary: ",end='')
     ## Create a dictionnary with FLAG as keys and a list of important informations for each line (Name(col_line[0]), FLAG(col_line[1]), CIGAR(col_line[5]), sequence(col_line[9]))
     dico_sam={}
@@ -158,14 +158,6 @@ def flagBinary(flag) :
 
 
 
-
-
-
-
-
-
-
-
 #### Analyze the unmapped reads (not paired) ####
 def unmapped(dico_sam, file_out):
     print("Function unmapped: ",end='')
@@ -181,13 +173,9 @@ def unmapped(dico_sam, file_out):
                     unmapped_fasta.write(f">{col_line[0]} function:unmapped\n{col_line[3]}\n")           # Write the line into a file called 'only_unmapped.fasta'
 
         summary_file.write(f"\nTotal unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file summary.
-        print("done.")
-        return unmapped_count
+    print("done.")
 
     
-
-
-
 
 
 
@@ -209,15 +197,14 @@ def partiallyMapped(dico_sam, file_out):
                     partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
         summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
-        print("done.")
-        return partially_mapped_count
+    print("done.")
 
 
 
 
     
 #### Analyze pair of reads where read is mapped and mate unmapped #### -> check du FLAG pour mate unmapped et CIGAR = 100M
-def Mapped_Unmapped(dico_sam, file_out):
+def mappedUnmapped(dico_sam, file_out):
     print("Function Mapped_Unmapped: ",end='')
     read_mapped_mate_unmapped_count = 0
 
@@ -230,7 +217,7 @@ def Mapped_Unmapped(dico_sam, file_out):
                     cigar=col_line[2]
                     if re.fullmatch(r"\d*[M]",cigar):
                         name_read=col_line[0]
-                        for line_mate in dico_sam[str(flag_mate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
+                        for line_mate in dico_sam[str(flagMate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
                             col_line_mate=line_mate.split('\t')
                             cigar_mate=col_line_mate[2]
                             if (col_line_mate[0]==name_read):                                       # Check: if same name as mate
@@ -240,50 +227,52 @@ def Mapped_Unmapped(dico_sam, file_out):
                                 break
 
         summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count}\n") 
-        print("done.")
-        return read_mapped_mate_unmapped_count
+    print("done.")
     
+   
+   
+   
    
 #### Fonction that return the mate flag ####
 
-def flag_mate(flag):
+def flagMate(flag):
     flag_bin=flagBinary(flag)
-    flag_mate_bin=flag_bin
-    flag_mate=0
+    flag_Mate_bin=flag_bin
+    flag_Mate=0
     if flag_bin[-3]=='1' and flag_bin[-4]=='0': # Modify the read/ mate unmapped
-        flag_mate_bin[-3]='0'
-        flag_mate_bin[-4]='1'
+        flag_Mate_bin[-3]='0'
+        flag_Mate_bin[-4]='1'
     elif flag_bin[-4]=='1'and flag_bin[-3]=='0':
-        flag_mate_bin[-3]='1'
-        flag_mate_bin[-4]='0'
+        flag_Mate_bin[-3]='1'
+        flag_Mate_bin[-4]='0'
  
     if flag_bin[-5]=='1' and flag_bin[-6]=='0': # Modify the sense
-        flag_mate_bin[-5]='0'
-        flag_mate_bin[-6]='1'
+        flag_Mate_bin[-5]='0'
+        flag_Mate_bin[-6]='1'
     elif flag_bin[-6]=='1' and flag_bin[-5]=='0':
-        flag_mate_bin[-5]='1' 
-        flag_mate_bin[-6]='0'
+        flag_Mate_bin[-5]='1' 
+        flag_Mate_bin[-6]='0'
 
     if flag_bin[-7]=='1' and flag_bin[-8]=='0': # Modify the first/second in pair
-        flag_mate_bin[-7]='0'
-        flag_mate_bin[-8]='1'
+        flag_Mate_bin[-7]='0'
+        flag_Mate_bin[-8]='1'
     elif flag_bin[-8]=='1' and flag_bin[-7]=='0':
-        flag_mate_bin[-7]='1'
-        flag_mate_bin[-8]='0'
+        flag_Mate_bin[-7]='1'
+        flag_Mate_bin[-8]='0'
         
     j=0
-    for i in range(len(flag_mate_bin),0,-1):
-        if flag_mate_bin[i-1]=='1':
-            flag_mate+=2**j
+    for i in range(len(flag_Mate_bin),0,-1):
+        if flag_Mate_bin[i-1]=='1':
+            flag_Mate+=2**j
         j+=1
     
-    return flag_mate
+    return flag_Mate
 
 
 
 #### Analyze the reads where one is mapped and the mate is partially mapped (Using Flag and CIGAR)####
 
-def one_partially_mapped(dico_sam,file_out):
+def onePartiallyMapped(dico_sam,file_out):
     print("Function one_partially_mapped: ",end='')
     pair_one_partially_mapped_count = 0
     
@@ -296,7 +285,7 @@ def one_partially_mapped(dico_sam,file_out):
                     cigar=col_line[2]                           # CIGAR is stocked into the variable cigar
                     if re.fullmatch(r".*\d[SH].*",cigar): # Check if the read is partially mapped
                     
-                        for line_mate in dico_sam[str(flag_mate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
+                        for line_mate in dico_sam[str(flagMate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
                             col_line_mate=line_mate.split('\t')
                             cigar_mate=col_line_mate[2]
                             
@@ -309,8 +298,7 @@ def one_partially_mapped(dico_sam,file_out):
                         
 
         summary_file.write(f"Total pair of reads with one partially mapped and one mapped correctly: {pair_one_partially_mapped_count}\n") 
-        print("done.")
-        return pair_one_partially_mapped_count
+    print("done.")
 
     
 
@@ -341,6 +329,8 @@ def readCigar(cigar):
             dico[k] += int(value[n])  # inf key exist add value
             n += 1
     return dico
+
+
 
 
 ### Analyse the CIGAR = regular expression that summarise each read alignment ###
@@ -396,7 +386,7 @@ def globalPercentCigar(dico_sam,file_out):
             Egal += float(mutValues[8])
 
         FinalCigar.write("\n\n\n\tGlobal cigar mutation observed :"+"\n\n"
-                        +"Alignelement Match : "+str(round(M/nbReads,2))+"\n"
+                        +"Alignement Match : "+str(round(M/nbReads,2))+"\n"
                         +"Insertion : "+str(round(I/nbReads,2))+"\n"
                         +"Deletion : "+str(round(D/nbReads,2))+"\n"
                         +"Skipped region : "+str(round(S/nbReads,2))+"\n"
@@ -405,25 +395,29 @@ def globalPercentCigar(dico_sam,file_out):
                         +"Padding : "+str(round(P/nbReads,2))+"\n"
                         +"Sequence Match : "+str(round(Egal/nbReads,2))+"\n"
                         +"Sequence Mismatch : "+str(round(X/nbReads,2))+"\n")
+    os.remove("outpuTable_cigar.txt")
     print("done.")
+
 
 
 
  
 #### Summarise the results ####
 
-def Summary(dico_sam, fileSummaryName):
+def summary(dico_sam, fileSummaryName):
     with open(fileSummaryName,"w") as f:
         f.write(f"\t\t\t\t   GLOBAL SUMMARY OF YOUR SAM FILE \n"+
                 "\tNumber of reads with characteristics:\n")
         
     unmapped(dico_sam, fileSummaryName)
-    Mapped_Unmapped(dico_sam, fileSummaryName)
+    mappedUnmapped(dico_sam, fileSummaryName)
         
     partiallyMapped(dico_sam,fileSummaryName)
-    one_partially_mapped(dico_sam,fileSummaryName)
+    onePartiallyMapped(dico_sam,fileSummaryName)
     
     globalPercentCigar(dico_sam,fileSummaryName)
+   
+
    
 #### Help function ####
 
@@ -434,6 +428,9 @@ def help():
           " -i|--input\tFILE\t Input file path\n"+
           " -o|--output\tFILE\t Output file name [file_out.txt]\n\n")
 
+
+
+
 #### Main function ####
 
 def main(argv):
@@ -442,23 +439,43 @@ def main(argv):
         "file_out":"./file_out_summary.txt",
     }
 
+    
     ## Arguments gestion
     for i in range(0,len(sys.argv),1):
-        if ( sys.argv[i] == "-i" ) or ( sys.argv[i] == "--input" ):
-            dico_files["file_in"]=sys.argv[i+1]
-        elif ( sys.argv[i] == "-o" ) or ( sys.argv[i] == "--output" ):
-            dico_files["file_out"]=sys.argv[i+1]
-        elif ( sys.argv[i] == "-h" ) or ( sys.argv[i] == "--help" ) or ( len(sys.argv) == 1 ):
+        liste_arg=["-i","--input","-o","--output","-h","--help"]
+        
+        if ( sys.argv[i] in liste_arg[0:2:1] ):
+        
+            # Check if a file name/path is given after the option -i|--input and different from an option
+            if i+1<len(sys.argv) and sys.argv[i+1] not in liste_arg:
+                dico_files["file_in"]=sys.argv[i+1]
+            else:
+                print("Please insert a file name/path after the -i|--input option")
+                exit()
+        
+        elif ( sys.argv[i] in liste_arg[2::1][:2:1] ):
+        
+            # Check if a file name or path is given after the option -o|--output and different from an option
+            if i+1<len(sys.argv) and sys.argv[i+1] not in liste_arg :
+                dico_files["file_out"]=sys.argv[i+1]
+            else:
+                print("Please insert a file name/path after the -o|--output option")
+                exit()
+        
+        elif ( sys.argv[i] in liste_arg[4:2:1][:2:1] ) or ( len(sys.argv) == 1 ):
             help()
+            exit()
+        
+        elif ((sys.argv[i] not in liste_arg) and i!=0 and (sys.argv[i-1] not in liste_arg)):
+            print(f"Please enter correct arguments (for more information, use the --help|-h option).")
             exit()
 
 
     ## Launch the script Summary, with all fonctions if the file is correct
     if testFile(dico_files["file_in"]):
         print("Entry file is a correct SAM")
-        dico_sam=store_sam(dico_files["file_in"])
-        Summary(dico_sam,dico_files["file_out"])
-        
+        dico_sam=storeSam(dico_files["file_in"])
+        summary(dico_sam,dico_files["file_out"])
     
     
 ############### LAUNCH THE SCRIPT ###############
