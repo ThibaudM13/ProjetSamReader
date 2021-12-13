@@ -63,7 +63,7 @@
 
 ### Prerequisites
 
-In order to run optimally our SamReader.py, this are configuration and packages our script use:
+In order to run optimally our SamReader.py, this are configuration and packages our script uses:
 
 * Python 3
   ```sh
@@ -76,7 +76,7 @@ In order to run optimally our SamReader.py, this are configuration and packages 
 
 ### Installation
 
-Download the script the way you prefer:
+Download the script using one of the following way:
 
   ```sh
   # By using wget
@@ -93,8 +93,7 @@ Download the script the way you prefer:
 
 ### Input
 
-A correct SAM file (the script needs an extension '.sam' on your file)
-
+SAM file with '.sam' extension (Be sure that the script will verify the input format)
 
 ### Launch the script
 
@@ -152,6 +151,6 @@ See the GNU General Public License for more details ([GNU website](https://www.g
 
 MARIN Thibaud - [thibaud.marin@etu.umontpellier.fr](mailto:thibaud.marin@etu.umontpellier.fr) - [Linkedin](https://www.linkedin.com/in/thibaud-marin/)
 
-PEREZ Kélian - [kelian.perez@etu.umontpellier.fr](mailto:kelian.perez@etu.umontpellier.fr)
+PEREZ Kélian - [kelian.perez@etu.umontpellier.fr](mailto:kelian.perez@etu.umontpellier.fr) - [Linkedin](https://www.linkedin.com/in/k%C3%A9lian-perez-b0217a208/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
