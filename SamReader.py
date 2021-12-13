@@ -4,7 +4,7 @@
 
 #__authors__ = ("Thibaud MARIN", "Kélian PEREZ")
 #__contact__ = ("thibaud.marin@etu.umontpellier.fr","kelian.perez@etu.umontpellier.fr")
-#__version__ = "1.2"
+#__version__ = "2.0"
 #__date__ = "12/14/2021"
 #__licence__ ="This program is free software: you can redistribute it and/or modify
         #it under the terms of the GNU General Public License as published by
@@ -103,11 +103,7 @@ def testFile(given_file) :
         return False
 
         
-## 2/ Read, 
-
-
-
-## 3/ Store,
+## 2/ Read & Store
 
 def storeSam(file_input):
     print("Storing file into dictionnary: ",end='')
@@ -128,14 +124,7 @@ def storeSam(file_input):
     print("done.")
     return dico_sam
 
-## 4/ Analyse 
-
-
-
-
-
-
-
+## 3/ Analyse 
 
 
 
@@ -343,7 +332,7 @@ def percentMutation(dico):
 
     mutList = ['M','I','D','S','H','N','P','X','=']
     res = ""
-    for mut in mutList : # Calculated percent of mutation if mut present in the dictionnary, else, percent of mut = 0
+    for mut in mutList : # Calculate percent of mutation if mut present in the dictionnary, else, percent of mut = 0
         if mut in dico.keys() :
             res += (str(round((dico[mut] * 100) / totalValue, 2)) + ";")
         else :
@@ -395,7 +384,7 @@ def globalPercentCigar(dico_sam,file_out):
                         +"Padding : "+str(round(P/nbReads,2))+"\n"
                         +"Sequence Match : "+str(round(Egal/nbReads,2))+"\n"
                         +"Sequence Mismatch : "+str(round(X/nbReads,2))+"\n")
-    os.remove("outpuTable_cigar.txt")
+    os.remove("outpuTable_cigar.txt") # Delete the tempory file
     print("done.")
 
 
