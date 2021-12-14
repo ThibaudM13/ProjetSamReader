@@ -26,7 +26,7 @@
 
     #Synopsis:
         ##SamReader.py -h or --help # launch the help.
-        ##SamReader.py -i or --input <file> # Launch SamReader to analyze a samtools file (.sam) and print the result in the terminal
+        ##SamReader.py -i or --input <file> # Launch SamReader to analyze a samtools file (.sam)
         ##SamReader.py -i or --input <file> -o or --output <name> # Launch SamReader to analyze a samtools file (.sam) and print the result in the file called <name>
   
 
