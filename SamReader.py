@@ -202,8 +202,8 @@ def mappedUnmapped(dico_sam, file_out, nbReads):
     with open ("read_mapped_mate_unmapped.fasta", "w") as read_mapped_mate_unmapped_fasta, open(file_out, "a+") as summary_file:
         for key_dico in dico_sam:
             flag = flagBinary(key_dico)                                        # convert flag in binary
-            if (flag[-4] =='1' and flag[-3] =='0'):                            # check if 3rd element = 0 (mate is not unmapped) and 4th element of FLAG = 1 (mate unmapped)
-                for line in dico_sam[key_dico]:                                # Parse lines with the 'right' falg                              
+            if (flag[-4] =='1' and flag[-3] =='0'):                            # check if 3rd element = 0 (read is not unmapped) and 4th element of FLAG = 1 (mate unmapped)
+                for line in dico_sam[key_dico]:                                                            
                     col_line=line.split('\t')                              
                     cigar=col_line[2]                                          # variable cigar hosts the CIGAR
                     if re.fullmatch(r"\d*[M]",cigar):                          # check if CIGAR is xxxM with xxx the total length of the read in bp
@@ -274,17 +274,17 @@ def onePartiallyMapped(dico_sam,file_out,nbReads):
             if flag[-2]=='1':                                   # Check if the 2nd element in the FLAG is 1 (paired in proper pair)
                 for line in dico_sam[key_dico]:                 # Parse the lines with the corresponding flag
                     col_line=line.split('\t')                      
-                    cigar=col_line[2]                           # CIGAR is stocked into the variable cigar
-                    if re.fullmatch(r".*\d[SH].*",cigar): # Check if the read is partially mapped
+                    cigar=col_line[2]                           # CIGAR is stored into the variable cigar
+                    if re.fullmatch(r".*\d[SH].*",cigar):       # Check if the read is partially mapped
                     
                         if str(flagMate(key_dico)) in dico_sam.keys():
                             for line_mate in dico_sam[str(flagMate(key_dico))]:                        # Parse lines with complementary flag, to find the mate
                                 col_line_mate=line_mate.split('\t')
                                 cigar_mate=col_line_mate[2]
                             
-                                if ((col_line_mate[0]==col_line[0]) & (bool(re.fullmatch(r"\d*[M]",cigar_mate)))):  # Check: if same name as mate, if its CIGAR is full M (full mapped)
+                                if ((col_line_mate[0]==col_line[0]) & (bool(re.fullmatch(r"\d*[M]",cigar_mate)))):  # Check: if same name as mate, and its CIGAR is full M (full mapped)
                                     pair_one_partially_mapped_count += 1                                                
-                                    one_partially_mapped_fasta.write(f">{col_line[0]} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file
+                                    one_partially_mapped_fasta.write(f">{col_line[0]} function:one_partially_mapped read partially mapped\n{col_line[3]}\n")       # Write the couple of reads in the file out
                                     one_partially_mapped_fasta.write(f">{col_line_mate[0]} function:one_partially_mapped mate mapped\n{col_line_mate[3]}\n")
                                     break
                         else:
