@@ -172,7 +172,7 @@ def unmapped(dico_sam, file_out):
     
 #### Analyze the partially mapped reads ####
 def partiallyMapped(dico_sam, file_out):
-    print("Function partiallyMapped:  ... running ...")
+    print("Function partiallyMapped: ", end='')
     partially_mapped_count = 0
 
     with open ("partially_mapped.fasta", "w") as partially_mapped_fasta, open(file_out, "a+") as summary_file:
