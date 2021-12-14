@@ -34,7 +34,7 @@
 ############### IMPORT MODULES ###############
 
 import os, sys, re
-
+import subprocess
 
 ############### FUNCTIONS TO :
 
@@ -46,6 +46,8 @@ def testFile(given_file) :
     file_is_correct=True
     nb_header_lines=0
     cpt=0
+    
+    
     
     ## Tests on given file
     
@@ -148,7 +150,7 @@ def flagBinary(flag) :
 
 
 #### Analyze the unmapped reads (not paired) ####
-def unmapped(dico_sam, file_out):
+def unmapped(dico_sam, file_out,nbReads):
     print("Function unmapped: ",end='')
     unmapped_count = 0
     with open ("only_unmapped.fasta", "w") as unmapped_fasta, open(file_out, "a+") as summary_file:
@@ -161,7 +163,7 @@ def unmapped(dico_sam, file_out):
                     col_line=line.split('\t')
                     unmapped_fasta.write(f">{col_line[0]} function:unmapped\n{col_line[3]}\n")           # Write the line into a file called 'only_unmapped.fasta'
 
-        summary_file.write(f"\nTotal unmapped reads: {unmapped_count}\n") # Write the total number of unmapped reads into a file summary.
+        summary_file.write(f"\nTotal unmapped reads: {unmapped_count} ({unmapped_count/nbReads:.4f} % of total reads)\n") # Write the total number of unmapped reads into a file summary.
     print("done.")
 
     
@@ -171,7 +173,7 @@ def unmapped(dico_sam, file_out):
 
     
 #### Analyze the partially mapped reads ####
-def partiallyMapped(dico_sam, file_out):
+def partiallyMapped(dico_sam, file_out,nbReads):
     print("Function partiallyMapped: ", end='')
     partially_mapped_count = 0
 
@@ -186,7 +188,7 @@ def partiallyMapped(dico_sam, file_out):
                         partially_mapped_count += 1
                         partially_mapped_fasta.write(f">{col_line[0]} function:partiallyMapped\n{col_line[3]}\n")
 
-        summary_file.write(f"Total partially mapped reads: {partially_mapped_count}\n") 
+        summary_file.write(f"Total partially mapped reads: {partially_mapped_count} ({partially_mapped_count/nbReads:.4f} % of total reads)\n") 
     print("done.")
 
 
@@ -194,7 +196,7 @@ def partiallyMapped(dico_sam, file_out):
 
     
 #### Analyze pair of reads where read is mapped and mate unmapped #### -> check du FLAG pour mate unmapped et CIGAR = 100M
-def mappedUnmapped(dico_sam, file_out):
+def mappedUnmapped(dico_sam, file_out, nbReads):
     print("Function Mapped_Unmapped: ", end='')
     read_mapped_mate_unmapped_count = 0
 
@@ -217,7 +219,7 @@ def mappedUnmapped(dico_sam, file_out):
                                     break
                         else:
                             print(f"\nERROR_FLAG: The flag: {key_dico} of read {col_line[0]} do not a have a mate with the complementary FLAG ({flagMate(key_dico)})\n")
-        summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count}\n") 
+        summary_file.write(f"Total pair of reads where a read is mapped and his mate is unmapped: {read_mapped_mate_unmapped_count} ({read_mapped_mate_unmapped_count/nbReads:.4f} % of total reads)\n") 
     print("done.")
     
    
@@ -263,7 +265,7 @@ def flagMate(flag):
 
 #### Analyze the reads where one is mapped and the mate is partially mapped (Using Flag and CIGAR)####
 
-def onePartiallyMapped(dico_sam,file_out):
+def onePartiallyMapped(dico_sam,file_out,nbReads):
     print("Function one_partially_mapped: ",end='')
     pair_one_partially_mapped_count = 0
     
@@ -290,7 +292,7 @@ def onePartiallyMapped(dico_sam,file_out):
                             print(f"\nERROR_FLAG: The flag: {key_dico} of read {col_line[0]} do not a have a mate with the complementary FLAG ({flagMate(key_dico)})\n")
                         
 
-        summary_file.write(f"Total pair of reads with one partially mapped and one mapped correctly: {pair_one_partially_mapped_count}\n") 
+        summary_file.write(f"Total pair of reads with one partially mapped and one mapped correctly: {pair_one_partially_mapped_count} ({pair_one_partially_mapped_count/nbReads:.4f} % of total reads)\n") 
     print("done.")
 
     
@@ -378,16 +380,16 @@ def globalPercentCigar(dico_sam,file_out):
             X += float(mutValues[7])
             Egal += float(mutValues[8])
 
-        FinalCigar.write("\n\n\n\tGlobal cigar mutation observed :"+"\n\n"
-                        +"Alignement Match : "+str(round(M/nbReads,2))+"\n"
-                        +"Insertion : "+str(round(I/nbReads,2))+"\n"
-                        +"Deletion : "+str(round(D/nbReads,2))+"\n"
-                        +"Soft Clipping : "+str(round(S/nbReads,2))+"\n"
-                        +"Hard Clipping : "+str(round(H/nbReads,2))+"\n"
-                        +"Skipped Region : "+str(round(N/nbReads,2))+"\n"
-                        +"Padding : "+str(round(P/nbReads,2))+"\n"
-                        +"Sequence Match : "+str(round(Egal/nbReads,2))+"\n"
-                        +"Sequence Mismatch : "+str(round(X/nbReads,2))+"\n")
+        FinalCigar.write(f"\n\n\n\tGlobal cigar mutation observed :\n\n")
+        FinalCigar.write(f"Alignement Match :\t{M/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Insertion :\t\t{I/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Deletion :\t\t{D/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Soft Clipping :\t\t{S/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Hard Clipping :\t\t{H/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Skipped Region :\t{N/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Padding :\t\t{P/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Sequence Match :\t{Egal/nbReads:>7.3f}%\n")
+        FinalCigar.write(f"Sequence Mismatch :\t{X/nbReads:>7.3f}%\n")
     os.remove("outpuTable_cigar.txt") # Delete the tempory file
     print("done.")
 
@@ -397,16 +399,16 @@ def globalPercentCigar(dico_sam,file_out):
  
 #### Summarise the results ####
 
-def summary(dico_sam, fileSummaryName):
+def summary(dico_sam, fileSummaryName,nbReads):
     with open(fileSummaryName,"w") as f:
         f.write(f"\t\t\t\t   GLOBAL SUMMARY OF YOUR SAM FILE \n"+
                 "\tNumber of reads with characteristics:\n")
         
-    unmapped(dico_sam, fileSummaryName)
-    mappedUnmapped(dico_sam, fileSummaryName)
+    unmapped(dico_sam, fileSummaryName,nbReads)
+    mappedUnmapped(dico_sam, fileSummaryName,nbReads)
         
-    partiallyMapped(dico_sam,fileSummaryName)
-    onePartiallyMapped(dico_sam,fileSummaryName)
+    partiallyMapped(dico_sam,fileSummaryName,nbReads)
+    onePartiallyMapped(dico_sam,fileSummaryName,nbReads)
     
     globalPercentCigar(dico_sam,fileSummaryName)
    
@@ -463,12 +465,16 @@ def main(argv):
             print(f"Please enter correct arguments (for more information, use the --help|-h option).")
             exit()
 
-
+    nbReads=0
     ## Launch the script Summary, with all fonctions if the file is correct
     if testFile(dico_files["file_in"]):
         print("Entry file is a correct SAM")
         dico_sam=storeSam(dico_files["file_in"])
-        summary(dico_sam,dico_files["file_out"])
+        
+        for key_dico in dico_sam:
+            nbReads+=len(dico_sam[key_dico]) # Calculating the reads number, in a dico with list of reads under keyvalue
+            
+        summary(dico_sam,dico_files["file_out"],int(nbReads))
     
     
 ############### LAUNCH THE SCRIPT ###############
