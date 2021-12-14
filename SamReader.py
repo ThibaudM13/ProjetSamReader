@@ -34,7 +34,6 @@
 ############### IMPORT MODULES ###############
 
 import os, sys, re
-import subprocess
 
 ############### FUNCTIONS TO :
 
