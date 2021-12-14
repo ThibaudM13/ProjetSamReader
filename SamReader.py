@@ -349,7 +349,7 @@ def globalPercentCigar(dico_sam,file_out):
     """
         Preparation of the outpuTable_cigar.txt file.
     """
-    print("Function globalPercentCigar (preparation):  ... running ...")
+    print("Function globalPercentCigar (preparation): ",end='')
     with open ("outpuTable_cigar.txt", "w") as outputTable:
         for flag in dico_sam:
             for line in dico_sam[flag]:
@@ -361,7 +361,7 @@ def globalPercentCigar(dico_sam,file_out):
     """
       Global representation of cigar distribution.
     """
-    print("Function globalPercentCigar (analyse and writing): ... running ...")
+    print("Function globalPercentCigar (analyse and writing): ",end='')
     with open ("outpuTable_cigar.txt","r") as outpuTable, open(file_out, "a+") as FinalCigar:
         nbReads, M, I, D, S, H, N, P, X, Egal = [0 for n in range(10)]
 
